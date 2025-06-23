@@ -1,0 +1,68 @@
+name: hems_app
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  complex: ^0.8.0
+  http: ^1.4.0
+  either_dart: ^1.0.0
+  firebase_core: ^3.13.1
+  firebase_messaging: ^15.2.6
+  firebase_analytics: ^11.4.6
+  collection: ^1.19.1
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+  duration_picker: ^1.0.0
+  fl_chart: ^1.0.0
+  material_design_icons_flutter: 7.0.7296
+  flutter_local_notifications: ^19.1.0
+  timezone: ^0.10.1
+  provider: ^6.1.5
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.5
+  flutter_native_splash: ^2.4.6
+  flutter_launcher_icons: ^0.14.4
+
+flutter_native_splash:
+  color: "#a56ab6"
+  android_12:
+    color: "#a56ab6"
+  android: true
+  ios: true
+  web: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 16
+  adaptive_icon_foreground: "assets/icons/icon_transparent.png"
+  adaptive_icon_background: "#a56ab6"
+  adaptive_icon_foreground_inset: 24
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icons/icon.png"
+  windows:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    icon_size: 48
+  macos:
+    generate: false
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  test: ^1.25.15
+
+flutter:
+  uses-material-design: true
+  generate: true

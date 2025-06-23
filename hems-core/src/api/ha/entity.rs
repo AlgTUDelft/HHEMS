@@ -1,9 +1,16 @@
 use std::env;
 
-use actix_web::web::Json;
+use serde::Serialize;
+use serde::Deserialize;
 use serde_json::Value;
 
 use super::{init, init_load_map, ApiError, EntityState, BASE_URL, CLIENT, LOAD_MAP};
+
+#[allow(dead_code)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EntityServiceRequest {
+    pub entity_id: String,
+}
 
 pub async fn get_entity_consumption(entity_id: &str) -> Result<EntityState, ApiError> {
     let client = CLIENT.get_or_init(init);
@@ -77,6 +84,42 @@ pub async fn get_entity_state(entity_id: &str) -> Result<Value, ApiError> {
     let ha_token = env::var("HA_TOKEN").expect("HA_TOKEN must be set");
 
     let response = client.get(url).bearer_auth(ha_token).send().await?;
+
+    if !response.status().is_success() {
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(ApiError::HomeAssistantError(format!(
+            "Failed to set entity state: {}",
+            error_text
+        )));
+    }
+
+    let response_body = response.json().await?;
+
+    Ok(response_body)
+}
+
+pub async fn toggle_entity_state(entity_id: &str, entity_state: bool) -> Result<Value, ApiError> {
+    let client = CLIENT.get_or_init(init);
+    let url = format!("{}/api/services/{}/{}",
+        *BASE_URL,
+        entity_id.split(".").next().unwrap_or_default(),
+        if entity_state { "turn_on" } else { "turn_off" }
+    );
+    let ha_token = env::var("HA_TOKEN").expect("HA_TOKEN must be set");
+
+    let request = EntityServiceRequest {
+        entity_id: entity_id.to_string(),
+    };
+
+    let response = client
+        .post(url)
+        .json(&request)
+        .bearer_auth(ha_token)
+        .send()
+        .await?;
 
     if !response.status().is_success() {
         let error_text = response

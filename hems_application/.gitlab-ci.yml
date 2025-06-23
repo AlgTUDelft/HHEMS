@@ -1,0 +1,89 @@
+# Copyright (c) 2011-present GitLab Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+spec:
+  inputs:
+    hems-url:
+      default: http://localhost:8080
+      description: The URL for the HEMS backend
+
+---
+
+image: "ghcr.io/cirruslabs/flutter:3.32.1"
+
+variables:
+  DOCUMENTATION_URL: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/documentation/${CI_COMMIT_TAG}/documentation-${CI_COMMIT_TAG}.zip
+  APK_URL: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/android-apk/${CI_COMMIT_TAG}/hems_application-${CI_COMMIT_TAG}.apk
+
+test:
+  stage: test
+  before_script:
+    - flutter pub get
+    - flutter gen-l10n
+    - flutter pub global activate junitreport
+    - export PATH="$HOME/.pub-cache/bin:$PATH"
+  script:
+    - flutter test --machine --coverage | tojunit -o report.xml
+    - lcov --summary coverage/lcov.info
+    - genhtml coverage/lcov.info --output=coverage
+  coverage: '/lines\.*: \d+\.\d+\%/'
+  artifacts:
+    name: coverage
+    paths:
+      - $CI_PROJECT_DIR/coverage
+    reports:
+      junit: report.xml
+
+build:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG
+  before_script:
+    - flutter pub get
+    - flutter gen-l10n
+  script:
+    - flutter build apk --dart-define=HEMS_URL=$[[ inputs.hems-url ]]
+    - dart doc .
+    - zip -r documentation.zip doc
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file build/app/outputs/apk/release/app-release.apk \
+        $APK_URL
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file documentation.zip \
+        $DOCUMENTATION_URL
+
+release:
+  stage: deploy
+  image: registry.gitlab.com/gitlab-org/release-cli:v0.24.0
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - echo "running release"
+  release:
+    tag_name: '$CI_COMMIT_TAG'
+    description: 'Release $CI_COMMIT_TAG, with "$[[ inputs.hems-url ]]" as the HEMS server URL.'
+    assets:
+      links:
+        - name: 'HEMS application apk'
+          url: $APK_URL
+        - name: 'Documentation'
+          url: $DOCUMENTATION_URL

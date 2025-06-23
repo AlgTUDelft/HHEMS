@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "382446275425",
+    "project_id": "hems-03d",
+    "storage_bucket": "hems-03d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382446275425:android:d69ffb43d319aab4edd320",
+        "android_client_info": {
+          "package_name": "com.example.hems_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCi3oCRZf_3tgP2zWHngSXNusCGVlUCi-E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,6 +8,9 @@ pub fn configure(cfg: &mut utoipa_actix_web::service_config::ServiceConfig) {
     cfg.service(
         scope::scope("/entity")
             .service(get_entity_consumption)
+            .service(get_entity_state)
+            .service(set_entity_state)
+            .service(toggle)
             .service(add_entity),
     );
 }
@@ -107,5 +110,28 @@ async fn add_entity(request: web::Json<EntityRequest>) -> impl Responder {
     match ha_entity::add_entity(entity).await {
         Ok(_) => HttpResponse::Ok().body("OK"),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to add entity, :{}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    tag = "Entity",
+    description = "Set entity state",
+    responses(
+        (status = 200, description = "Entity state set successfully"),
+        (status = 500, description = "Failed to set entity state"),
+    ),
+    params(
+        ("house_id" = u32, description = "House ID"),
+        ("entity_name" = String, description = "Name of the entity"),
+        ("state" = bool, description = "State to toggle to"),
+    ),
+)]
+#[get("/{entity_name}/toggle/{state}")]
+async fn toggle(id: web::Path<(u32, String, bool)>) -> impl Responder {
+    let (_house_id, entity_name, state) = id.into_inner();
+    match entity::toggle_entity_state(&entity_name, state).await {
+        Ok(entity_states) => HttpResponse::Ok().json(entity_states),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Failed to toggle device state: {}", e)),
     }
 }
